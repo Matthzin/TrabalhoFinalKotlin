@@ -7,11 +7,23 @@ import kotlinx.coroutines.flow.asStateFlow
 
 data class RegisterUser(
     val user: String = "",
+    val name: String = "",
     val email: String = "",
     val password: String = "",
     val confirmPassword: String = "",
     val errorMessage: String = "",
 ) {
+    fun validateEmail(): String {
+        val emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
+        if (email.isBlank()) {
+            return "Email is required"
+        }
+        if (!emailRegex.matches(email)) {
+            return "Invalid email format. Use a valid domain (e.g., user@example.com)"
+        }
+        return ""
+    }
+
     fun validatePassord(): String {
         if (password.isBlank()) {
             return "Password is required"
@@ -29,6 +41,12 @@ data class RegisterUser(
     fun validateAllField() {
         if (user.isBlank()) {
             throw Exception("User is required")
+        }
+        if (validateEmail().isNotBlank()) {
+            throw Exception(validateEmail())
+        }
+        if (name.isBlank()) {
+            throw Exception("Name is required")
         }
         if (email.isBlank()) {
             throw Exception("Email is required")
@@ -50,6 +68,10 @@ class RegisterUserViewModel : ViewModel() {
 
     fun onUserChange(user: String) {
         _uiState.value = _uiState.value.copy(user = user)
+    }
+
+    fun onNameChange(name: String) {
+        _uiState.value = _uiState.value.copy(name = name)
     }
 
     fun onEmailChange(email : String) {

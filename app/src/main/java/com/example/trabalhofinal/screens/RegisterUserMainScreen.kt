@@ -53,7 +53,14 @@ fun RegisterUserFields(registerUserViewModel: RegisterUserViewModel) {
         value = registerUser.value.user,
         onValueChange = {
             registerUserViewModel.onUserChange(it)
-        },
+        }
+    )
+    MyTextField(
+        label = "Name",
+        value = registerUser.value.name,
+        onValueChange = {
+            registerUserViewModel.onNameChange(it)
+        }
     )
     MyTextField(
         label = "E-mail",
@@ -99,10 +106,6 @@ fun RegisterUserFields(registerUserViewModel: RegisterUserViewModel) {
     }
 
 }
-
-
-
-
 
 @Composable
 @Preview(showSystemUi = true, showBackground = true, device = "id:Galaxy Nexus")
