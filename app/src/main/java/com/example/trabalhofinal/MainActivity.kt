@@ -4,17 +4,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.composable
 import com.example.trabalhofinal.screens.LoginScreen
 import com.example.trabalhofinal.screens.MainScreen
 import com.example.trabalhofinal.screens.RegisterUserMainScreen
@@ -26,15 +24,52 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TrabalhoFinalTheme {
+                val navController = rememberNavController()
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LoginScreen(
-                        onLoginSuccess = {
-                            // To be implemented
-                        },
-                        onNavigateToRegister = {
-                            // To be implemented
+                    NavHost(
+                        navController = navController,
+                        startDestination = "loginScreen",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable("loginScreen") {
+                            LoginScreen(
+                                onLoginSuccess = {
+                                    navController.navigate("mainScreen") {
+                                        popUpTo("loginScreen") { inclusive = true }
+                                    }
+                                },
+                                onNavigateToRegister = {
+                                    navController.navigate("registerUserScreen")
+                                }
+                            )
                         }
-                    )
+
+                        composable("mainScreen") {
+                            MainScreen(
+                                onLogout = {
+                                    navController.navigate("loginScreen") {
+                                        popUpTo("mainScreen") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable("registerUserScreen") {
+                            RegisterUserMainScreen(
+                                onRegisterSuccess = {
+                                    navController.navigate("loginScreen") {
+                                        popUpTo("registerUserScreen") { inclusive = true }
+                                    }
+                                },
+                                onNavigateToLogin = {
+                                    navController.navigate("loginScreen") {
+                                        popUpTo("registerUserScreen") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }

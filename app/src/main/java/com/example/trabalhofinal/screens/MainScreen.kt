@@ -13,11 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogout: () -> Unit) {
     Column(
         modifier = Modifier
-            .fillMaxSize().
-            background(Color.LightGray),
+            .fillMaxSize()
+            .background(Color.LightGray),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -25,8 +25,9 @@ fun MainScreen() {
             text = "Main Screen",
             style = MaterialTheme.typography.titleLarge
         )
-        //Button(onClick = { onNavigateTo("LoginScreen") }) {
-          //  Text(text = "Exit")
-        //}
+
+        Button(onClick = { onLogout() }) {
+            Text(text = "Exit")
+        }
     }
 }

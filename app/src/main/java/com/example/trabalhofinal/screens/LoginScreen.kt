@@ -24,10 +24,10 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onLoginSuccess: () -> Unit) {
     val loginState by loginViewModel.uiState.collectAsState()
     val ctx = LocalContext.current
 
-    Scaffold {
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
-                .padding(it)
+                .padding(paddingValues)
                 .padding(16.dp)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -56,13 +56,14 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onLoginSuccess: () -> Unit) {
                 Text(text = "Login")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Register",
+            Button(
                 modifier = Modifier.padding(top = 8.dp),
-                color = androidx.compose.ui.graphics.Color.Blue
-            )
+                onClick = {
+                    onNavigateToRegister()
+                }
+            ) {
+                Text(text = "Register")
+            }
         }
     }
 
