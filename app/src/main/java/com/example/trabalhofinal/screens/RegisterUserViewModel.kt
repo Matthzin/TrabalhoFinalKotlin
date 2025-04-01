@@ -1,9 +1,13 @@
 package com.example.trabalhofinal.screens
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.trabalhofinal.dao.UserDao
+import com.example.trabalhofinal.entity.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class RegisterUser(
     val user: String = "",
@@ -59,9 +63,18 @@ data class RegisterUser(
         }
     }
 
+    fun toUser(): User {
+        return User(
+            user = user,
+            name = name,
+            email = email,
+            password = password
+        )
+    }
+
 }
 
-class RegisterUserViewModel : ViewModel() {
+class RegisterUserViewModel(private val userDao: UserDao) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUser())
     val uiState : StateFlow<RegisterUser> = _uiState.asStateFlow()
@@ -89,6 +102,9 @@ class RegisterUserViewModel : ViewModel() {
     fun register(): Boolean  {
         try {
             _uiState.value.validateAllField()
+            viewModelScope.launch {
+                userDao.insert(_uiState.value.toUser())
+            }
             return true
             // register in database or invoke api
         }
