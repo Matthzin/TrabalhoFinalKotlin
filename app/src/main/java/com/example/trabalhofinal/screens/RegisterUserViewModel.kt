@@ -16,6 +16,7 @@ data class RegisterUser(
     val password: String = "",
     val confirmPassword: String = "",
     val errorMessage: String = "",
+    val isSaved: Boolean = false
 ) {
     fun validateEmail(): String {
         val emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
@@ -99,19 +100,25 @@ class RegisterUserViewModel(private val userDao: UserDao) : ViewModel() {
         _uiState.value = _uiState.value.copy(confirmPassword = confirm)
     }
 
-    fun register(): Boolean  {
+    fun register() {
         try {
             _uiState.value.validateAllField()
             viewModelScope.launch {
                 userDao.insert(_uiState.value.toUser())
+                _uiState.value = _uiState.value.copy(isSaved = true)
             }
-            return true
             // register in database or invoke api
         }
         catch (e: Exception) {
             _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Unknow error")
-            return false
         }
+    }
+
+    fun cleanDisplayValues() {
+        _uiState.value = _uiState.value.copy(
+            isSaved = false,
+            errorMessage = ""
+        )
     }
 
     fun cleanErrorMessage() {
