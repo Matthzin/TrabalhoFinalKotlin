@@ -31,4 +31,7 @@ interface UserDao {
 
     @Query("SELECT * FROM User u ORDER BY u.name ASC")
     suspend fun findAllByName(): List<User>
+
+    @Query("SELECT * FROM user WHERE user = :username AND password = :password LIMIT 1")
+    suspend fun getUserByCredentials(username: String, password: String): User?
 }

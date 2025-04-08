@@ -1,12 +1,8 @@
 package com.example.trabalhofinal.screens
 
-import androidx.compose.runtime.Composable
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,13 +12,21 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trabalhofinal.components.ErrorDialog
 import com.example.trabalhofinal.components.MyPasswordField
 import com.example.trabalhofinal.components.MyTextField
+import com.example.trabalhofinal.database.AppDatabase
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onNavigateToRegister: () -> Unit, onLoginSuccess: () -> Unit) {
-    val loginViewModel: LoginViewModel = viewModel()
+fun LoginScreen(
+    onNavigateToRegister: () -> Unit,
+    onLoginSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val userDao = db.userDao()
+    val factory = remember { LoginViewModelFactory(userDao) }
+    val loginViewModel: LoginViewModel = viewModel(factory = factory)
+
     val loginState by loginViewModel.uiState.collectAsState()
-    val ctx = LocalContext.current
 
     Scaffold { paddingValues ->
         Column(
@@ -47,10 +51,7 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onLoginSuccess: () -> Unit) {
             Button(
                 modifier = Modifier.padding(top = 16.dp),
                 onClick = {
-                    if (loginViewModel.login()) {
-                        Toast.makeText(ctx, "Login successful!", Toast.LENGTH_SHORT).show()
-                        onLoginSuccess()
-                    }
+                    loginViewModel.login()
                 }
             ) {
                 Text(text = "Login")
@@ -72,5 +73,13 @@ fun LoginScreen(onNavigateToRegister: () -> Unit, onLoginSuccess: () -> Unit) {
             error = loginState.errorMessage,
             onDismissRequest = { loginViewModel.clearError() }
         )
+    }
+
+    LaunchedEffect(loginState.isLoggedIn) {
+        if (loginState.isLoggedIn) {
+            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+            loginViewModel.clearLoginFlag()
+            onLoginSuccess()
+        }
     }
 }
