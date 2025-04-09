@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import androidx.room.Upsert
 import com.example.trabalhofinal.entity.User
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface UserDao {
@@ -27,7 +28,7 @@ interface UserDao {
     suspend fun findById(id: Int): User?
 
     @Query("SELECT * FROM User")
-    suspend fun findAll(): List<User>
+    fun findAll(): Flow<List<User>>
 
     @Query("SELECT * FROM User u ORDER BY u.name ASC")
     suspend fun findAllByName(): List<User>
