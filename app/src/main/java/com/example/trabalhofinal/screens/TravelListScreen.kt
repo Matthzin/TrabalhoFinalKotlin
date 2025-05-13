@@ -1,73 +1,59 @@
 package com.example.trabalhofinal.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trabalhofinal.database.AppDatabase
-import com.example.trabalhofinal.entity.User
+import com.example.trabalhofinal.entity.Trip
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-fun TravelListScreen()
-{
-    val ctx = LocalContext.current
-    val userDao = AppDatabase.getDatabase(ctx).userDao()
-    val listViewModel: TravelListViewModel = viewModel(
-        factory = TravelListViewModelFactory(userDao)
-    )
-    val userState = listViewModel.users.collectAsState(emptyList())
+fun TravelListScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val tripDao = AppDatabase.getDatabase(context).tripDao()
+    val trips = remember { mutableStateListOf<Trip>() }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Lista de Viagens") }
-            )
+    LaunchedEffect(true) {
+        tripDao.getAllTrips().collectLatest {
+            trips.clear()
+            trips.addAll(it)
         }
-    ){
-        Column(modifier = Modifier.padding(it)) {
-            LazyColumn {
-                items(items = userState.value) { user ->
-                    ItemUser(user)
-                }
+    }
+
+    LazyColumn(modifier = modifier.padding(16.dp)) {
+        items(trips) { trip ->
+            TripCard(trip = trip, onLongPress = {
+                // TODO: Navegar para tela de edição
+            })
+        }
+    }
+}
+
+@Composable
+fun TripCard(trip: Trip, onLongPress: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onLongPress = { onLongPress() }
+                )
             }
-
-        }
-    }
-}
-
-@Composable
-fun ItemUser(user: User) {
-    Card(modifier = Modifier.padding(16.dp)
-        .fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Text(text = user.name, style = MaterialTheme.typography.titleLarge)
-            Text(text = user.email)
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Destino: ${trip.destination}", style = MaterialTheme.typography.titleMedium)
+            Text("Tipo: ${trip.tripType}")
+            Text("Início: ${trip.startDate}")
+            Text("Término: ${trip.endDate}")
+            Text("Orçamento: R$ ${trip.budget}")
         }
     }
-}
-
-@Composable
-@Preview(showSystemUi = true)
-fun PreviewList() {
-    TravelListScreen()
 }

@@ -1,10 +1,14 @@
 package com.example.trabalhofinal.screens
 
 import androidx.lifecycle.ViewModel
-import com.example.trabalhofinal.dao.UserDao
-import com.example.trabalhofinal.entity.User
-import kotlinx.coroutines.flow.Flow
+import androidx.lifecycle.viewModelScope
+import com.example.trabalhofinal.dao.TripDao
+import com.example.trabalhofinal.entity.Trip
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 
-class TravelListViewModel(private val userDao: UserDao) : ViewModel() {
-    val users: Flow<List<User>> = userDao.findAll()
+class TravelListViewModel(private val tripDao: TripDao) : ViewModel() {
+    val trips: StateFlow<List<Trip>> = tripDao.getAllTrips()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }

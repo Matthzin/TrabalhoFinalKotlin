@@ -6,15 +6,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.trabalhofinal.screens.LoginScreen
 import com.example.trabalhofinal.screens.MainScreen
+import com.example.trabalhofinal.screens.RegisterTripScreen
 import com.example.trabalhofinal.screens.RegisterUserMainScreen
 import com.example.trabalhofinal.ui.theme.TrabalhoFinalTheme
 
@@ -51,6 +54,9 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("loginScreen") {
                                         popUpTo("mainScreen") { inclusive = true }
                                     }
+                                },
+                                onNavigateToRegisterTrip = {
+                                    navController.navigate("registerTrip")
                                 }
                             )
                         }
@@ -65,6 +71,16 @@ class MainActivity : ComponentActivity() {
                                 onNavigateToLogin = {
                                     navController.navigate("loginScreen") {
                                         popUpTo("registerUserScreen") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable("registerTrip") {
+                            RegisterTripScreen(
+                                onRegisterSuccess = {
+                                    navController.navigate("mainScreen") {
+                                        popUpTo("registerTrip") { inclusive = true }
                                     }
                                 }
                             )

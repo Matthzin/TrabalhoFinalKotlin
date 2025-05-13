@@ -1,33 +1,34 @@
 package com.example.trabalhofinal.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
 @Composable
-fun MainScreen(onLogout: () -> Unit) {
+fun MainScreen(
+    onLogout: () -> Unit,
+    onNavigateToRegisterTrip: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.LightGray),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "Main Screen",
-            style = MaterialTheme.typography.titleLarge
-        )
+        // Botão para navegar até o formulário de viagem
+        Button(onClick = { onNavigateToRegisterTrip() }) {
+            Text(text = "Cadastrar Viagem")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
 
+        // Botão de Logout
         Button(onClick = { onLogout() }) {
-            Text(text = "Exit")
+            Text(text = "Sair")
         }
     }
 }
