@@ -1,10 +1,10 @@
 package com.example.trabalhofinal.model
 
-enum class TripType(val label: String) {
-    LEISURE("Lazer"),
-    BUSINESS("Negócios"),
-    STUDY("Estudos"),
-    OTHER("Outro");
+enum class TripType(val descricao: String) {
+    LAZER("Lazer"),
+    NEGOCIOS("Negócios"),
+    ESTUDOS("Estudos"),
+    OUTROS("Outros");
 
-    override fun toString(): String = label
+    override fun toString(): String = descricao
 }
