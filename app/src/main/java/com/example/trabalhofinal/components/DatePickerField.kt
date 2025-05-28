@@ -30,7 +30,8 @@ fun DatePickerField(
     val datePickerDialog = DatePickerDialog(
         context,
         { _, selectedYear, selectedMonth, selectedDay ->
-            onDateSelected("$selectedDay/${selectedMonth + 1}/$selectedYear")
+            onDateSelected(String.format("%02d/%02d/%04d", selectedDay, selectedMonth + 1, selectedYear))
+
         },
         year, month, day
     )

@@ -11,23 +11,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.trabalhofinal.entity.Trip
 import com.example.trabalhofinal.model.TripType
 import com.example.travelapp.components.DatePickerField
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterTripScreen(
-    onRegisterSuccess: () -> Unit
+    onRegisterSuccess: () -> Unit,
+    saveTrip: suspend (trip: Trip) -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var destination by remember { mutableStateOf("") }
     var startDate by remember { mutableStateOf("") }
     var endDate by remember { mutableStateOf("") }
     var budget by remember { mutableStateOf("") }
-
     var selectedTripType by remember { mutableStateOf(TripType.LAZER) }
     var expanded by remember { mutableStateOf(false) }
 
@@ -47,7 +50,6 @@ fun RegisterTripScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Usando o novo componente de calendário
         DatePickerField(
             label = "Data de Início",
             date = startDate,
@@ -60,7 +62,6 @@ fun RegisterTripScreen(
             onDateSelected = { endDate = it }
         )
 
-        // Dropdown para tipo de viagem
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded }
@@ -92,13 +93,13 @@ fun RegisterTripScreen(
             }
         }
 
-        // Campo de orçamento com máscara monetária
         OutlinedTextField(
             value = budget,
             onValueChange = {
                 val cleanString = it.replace(Regex("[^\\d]"), "")
                 val parsed = cleanString.toDoubleOrNull() ?: 0.0
-                val formatted = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(parsed / 100)
+                val formatted = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+                    .format(parsed / 100)
                 budget = formatted
             },
             label = { Text("Orçamento") },
@@ -111,9 +112,38 @@ fun RegisterTripScreen(
                 if (destination.isBlank() || startDate.isBlank() || endDate.isBlank() || budget.isBlank()) {
                     Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Aqui você pode salvar no banco, se desejar
-                    Toast.makeText(context, "Viagem cadastrada com sucesso!", Toast.LENGTH_SHORT).show()
-                    onRegisterSuccess()
+                    scope.launch {
+                        try {
+                            val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                            val startDateParsed = java.time.LocalDate.parse(startDate, formatter)
+                            val endDateParsed = java.time.LocalDate.parse(endDate, formatter)
+
+                            val startDateDate = java.util.Date.from(
+                                startDateParsed.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
+                            )
+                            val endDateDate = java.util.Date.from(
+                                endDateParsed.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
+                            )
+
+                            val budgetValue = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+                                .parse(budget)?.toDouble() ?: 0.0
+
+                            val trip = Trip(
+                                destination = destination,
+                                tripType = selectedTripType,
+                                startDate = startDateDate,
+                                endDate = endDateDate,
+                                budget = budgetValue
+                            )
+
+                            saveTrip(trip)
+
+                            Toast.makeText(context, "Viagem cadastrada com sucesso!", Toast.LENGTH_SHORT).show()
+                            onRegisterSuccess()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Erro ao salvar viagem: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -122,3 +152,4 @@ fun RegisterTripScreen(
         }
     }
 }
+

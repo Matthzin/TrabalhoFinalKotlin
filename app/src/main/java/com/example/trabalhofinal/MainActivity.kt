@@ -6,20 +6,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.trabalhofinal.database.AppDatabase
+import com.example.trabalhofinal.entity.Trip
 import com.example.trabalhofinal.screens.LoginScreen
 import com.example.trabalhofinal.screens.MainScreen
 import com.example.trabalhofinal.screens.RegisterTripScreen
 import com.example.trabalhofinal.screens.RegisterUserMainScreen
 import com.example.trabalhofinal.ui.theme.TrabalhoFinalTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,6 +81,12 @@ class MainActivity : ComponentActivity() {
                                 onRegisterSuccess = {
                                     navController.navigate("mainScreen") {
                                         popUpTo("registerTrip") { inclusive = true }
+                                    }
+                                },
+                                saveTrip = { trip: Trip ->
+                                    lifecycleScope.launch {
+                                        val db = AppDatabase.getDatabase(this@MainActivity)
+                                        db.tripDao().insert(trip)
                                     }
                                 }
                             )
