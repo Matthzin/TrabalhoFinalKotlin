@@ -20,13 +20,11 @@ fun MainScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Botão para navegar até o formulário de viagem
         Button(onClick = { onNavigateToRegisterTrip() }) {
             Text(text = "Cadastrar Viagem")
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Botão de Logout
         Button(onClick = { onLogout() }) {
             Text(text = "Sair")
         }

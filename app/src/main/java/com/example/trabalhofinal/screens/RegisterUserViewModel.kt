@@ -107,7 +107,6 @@ class RegisterUserViewModel(private val userDao: UserDao) : ViewModel() {
                 userDao.insert(_uiState.value.toUser())
                 _uiState.value = _uiState.value.copy(isSaved = true)
             }
-            // register in database or invoke api
         }
         catch (e: Exception) {
             _uiState.value = _uiState.value.copy(errorMessage = e.message ?: "Unknow error")
