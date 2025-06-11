@@ -10,24 +10,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.trabalhofinal.components.AppTopBar
+import com.example.trabalhofinal.database.AppDatabase
 import com.example.trabalhofinal.entity.Trip
 import com.example.trabalhofinal.model.TripType
 import com.example.travelapp.components.DatePickerField
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterTripScreen(
-    onRegisterTripSuccess: () -> Unit,
-    saveTrip: suspend (trip: Trip) -> Unit,
-    onBack: () -> Unit
-) {
+fun EditTripScreen(tripId: Int?, navController: NavController) {
     val context = LocalContext.current
+    val tripDao = AppDatabase.getDatabase(context).tripDao()
     val scope = rememberCoroutineScope()
 
+    // Campos de estado
     var destination by remember { mutableStateOf("") }
     var startDate by remember { mutableStateOf("") }
     var endDate by remember { mutableStateOf("") }
@@ -36,6 +37,22 @@ fun RegisterTripScreen(
     var expanded by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
+    // Carrega os dados ao abrir a tela
+    LaunchedEffect(tripId) {
+        val trip = tripDao.getTripById(tripId)
+        trip?.let {
+            destination = it.destination
+            selectedTripType = it.tripType
+
+            val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
+            startDate = dateFormat.format(it.startDate)
+            endDate = dateFormat.format(it.endDate)
+
+            val formattedBudget = NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(it.budget)
+            budget = formattedBudget
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -43,7 +60,7 @@ fun RegisterTripScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AppTopBar(title = "Cadastro de Viagem", onNavigationClick = onBack)
+        AppTopBar(title = "Editar Viagem", onNavigationClick = { navController.popBackStack() })
 
         OutlinedTextField(
             value = destination,
@@ -113,55 +130,46 @@ fun RegisterTripScreen(
             onClick = {
                 if (destination.isBlank() || startDate.isBlank() || endDate.isBlank() || budget.isBlank()) {
                     Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
-                } else {
-                    isLoading = true
-                    scope.launch {
-                        try {
-                            val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                            val startDateParsed = java.time.LocalDate.parse(startDate, formatter)
-                            val endDateParsed = java.time.LocalDate.parse(endDate, formatter)
+                    return@Button
+                }
 
-                            val startDateDate = java.util.Date.from(
-                                startDateParsed.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
-                            )
-                            val endDateDate = java.util.Date.from(
-                                endDateParsed.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
-                            )
+                isLoading = true
+                scope.launch {
+                    try {
+                        val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        val start = java.time.LocalDate.parse(startDate, formatter)
+                        val end = java.time.LocalDate.parse(endDate, formatter)
 
-                            val budgetValue = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
-                                .parse(budget)?.toDouble() ?: 0.0
+                        val startDateParsed = Date.from(start.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant())
+                        val endDateParsed = Date.from(end.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant())
 
-                            val trip = Trip(
-                                destination = destination,
-                                tripType = selectedTripType,
-                                startDate = startDateDate,
-                                endDate = endDateDate,
-                                budget = budgetValue
-                            )
+                        val parsedBudget = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+                            .parse(budget)?.toDouble() ?: 0.0
 
-                            saveTrip(trip)
+                        val updatedTrip = Trip(
+                            id = tripId,
+                            destination = destination,
+                            tripType = selectedTripType,
+                            startDate = startDateParsed,
+                            endDate = endDateParsed,
+                            budget = parsedBudget
+                        )
 
-                            Toast.makeText(context, "Viagem cadastrada com sucesso!", Toast.LENGTH_SHORT).show()
-
-                            destination = ""
-                            startDate = ""
-                            endDate = ""
-                            budget = ""
-                            selectedTripType = TripType.LAZER
-
-                            onRegisterTripSuccess()
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Erro ao salvar viagem: ${e.message}", Toast.LENGTH_LONG).show()
-                        } finally {
-                            isLoading = false
-                        }
+                        tripDao.update(updatedTrip)
+                        Toast.makeText(context, "Viagem atualizada com sucesso!", Toast.LENGTH_SHORT).show()
+                        navController.popBackStack()
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Erro ao atualizar viagem: ${e.message}", Toast.LENGTH_LONG).show()
+                    } finally {
+                        isLoading = false
                     }
                 }
             },
             enabled = !isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isLoading) "Salvando..." else "Cadastrar Viagem")
+            Text(if (isLoading) "Salvando..." else "Salvar Alterações")
         }
     }
 }
+

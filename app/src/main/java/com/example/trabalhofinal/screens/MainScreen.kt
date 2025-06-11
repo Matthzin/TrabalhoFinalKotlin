@@ -1,32 +1,133 @@
 package com.example.trabalhofinal.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.trabalhofinal.components.AppTopBar
+import com.example.trabalhofinal.components.BottomNavigationBar
+import com.example.trabalhofinal.database.AppDatabase
+import com.example.trabalhofinal.entity.Trip
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(
-    onLogout: () -> Unit,
-    onNavigateToRegisterTrip: () -> Unit
+    navController: NavController,
+    onBackToMain: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Button(onClick = { onNavigateToRegisterTrip() }) {
-            Text(text = "Cadastrar Viagem")
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+    val context = LocalContext.current
+    val tripDao = AppDatabase.getDatabase(context).tripDao()
+    val trips = remember { mutableStateListOf<Trip>() }
+    val scope = rememberCoroutineScope()
 
-        Button(onClick = { onLogout() }) {
-            Text(text = "Sair")
+    LaunchedEffect(true) {
+        tripDao.getAllTrips().collectLatest {
+            trips.clear()
+            trips.addAll(it)
         }
     }
+
+    Scaffold(
+        bottomBar = { BottomNavigationBar(navController) }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
+        ) {
+            AppTopBar(title = "Minhas Viagens", onNavigationClick = onBackToMain)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LazyColumn {
+                items(trips, key = { it.id!! }) { trip ->
+                    TripCard(
+                        trip = trip,
+                        onLongPress = {
+                            navController.navigate("editTrip/${trip.id}")
+                        },
+                        onDelete = {
+                            trips.remove(trip)
+                            scope.launch {
+                                tripDao.delete(trip)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TripCard(
+    trip: Trip,
+    onLongPress: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val swipeState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { it * 0.5f },
+        confirmValueChange = {
+            if (it == SwipeToDismissBoxValue.StartToEnd) {
+                onDelete()
+                true
+            } else false
+        }
+    )
+
+    val offsetPx = swipeState.requireOffset()
+    val offsetDp = with(LocalDensity.current) { offsetPx.toDp() }
+
+    SwipeToDismissBox(
+        state = swipeState,
+        backgroundContent = {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(offsetDp.coerceAtLeast(0.dp))
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(start = 16.dp),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Excluir",
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        },
+        content = {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(onLongPress = { onLongPress() })
+                    },
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Destino: ${trip.destination}", style = MaterialTheme.typography.titleMedium)
+                    Text("Tipo: ${trip.tripType.name}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Início: ${trip.startDate}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Término: ${trip.endDate}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Orçamento: R$ ${trip.budget}", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    )
 }

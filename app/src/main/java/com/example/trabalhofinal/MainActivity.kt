@@ -4,8 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
@@ -14,10 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.trabalhofinal.database.AppDatabase
 import com.example.trabalhofinal.entity.Trip
-import com.example.trabalhofinal.screens.LoginScreen
-import com.example.trabalhofinal.screens.MainScreen
-import com.example.trabalhofinal.screens.RegisterTripScreen
-import com.example.trabalhofinal.screens.RegisterUserMainScreen
+import com.example.trabalhofinal.screens.*
 import com.example.trabalhofinal.ui.theme.TrabalhoFinalTheme
 import kotlinx.coroutines.launch
 
@@ -29,7 +28,10 @@ class MainActivity : ComponentActivity() {
             TrabalhoFinalTheme {
                 val navController = rememberNavController()
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets = WindowInsets.systemBars
+                ) { innerPadding ->
                     NavHost(
                         navController = navController,
                         startDestination = "loginScreen",
@@ -48,7 +50,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        composable("mainScreen") {
+                        /*composable("mainScreen") {
                             MainScreen(
                                 onLogout = {
                                     navController.navigate("loginScreen") {
@@ -57,9 +59,10 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNavigateToRegisterTrip = {
                                     navController.navigate("registerTrip")
-                                }
+                                },
+                                navController = navController
                             )
-                        }
+                        }*/
 
                         composable("registerUserScreen") {
                             RegisterUserMainScreen(
@@ -78,8 +81,8 @@ class MainActivity : ComponentActivity() {
 
                         composable("registerTrip") {
                             RegisterTripScreen(
-                                onRegisterSuccess = {
-                                    navController.navigate("mainScreen") {
+                                onRegisterTripSuccess = {
+                                    navController.navigate("travelListScreen") {
                                         popUpTo("registerTrip") { inclusive = true }
                                     }
                                 },
@@ -88,8 +91,29 @@ class MainActivity : ComponentActivity() {
                                         val db = AppDatabase.getDatabase(this@MainActivity)
                                         db.tripDao().insert(trip)
                                     }
+                                },
+                                onBack = {
+                                    navController.popBackStack()
                                 }
                             )
+                        }
+
+                        composable("mainScreen") {
+                            MainScreen(
+                                navController = navController, // novo argumento
+                                onBackToMain = {
+                                    navController.navigate("mainScreen") {
+                                        popUpTo("travelListScreen") { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+                        composable("editTrip/{tripId}") { backStackEntry ->
+                            val tripId = backStackEntry.arguments?.getString("tripId")?.toIntOrNull()
+                            if (tripId != null) {
+                                EditTripScreen(navController = navController, tripId = tripId)
+                            }
                         }
                     }
                 }

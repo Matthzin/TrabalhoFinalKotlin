@@ -6,8 +6,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TripDao {
-    @Query("SELECT * FROM Trip")
+    @Query("SELECT * FROM Trip ORDER BY startDate DESC")
     fun getAllTrips(): Flow<List<Trip>>
+
+    @Query("SELECT * FROM Trip WHERE id = :id LIMIT 1")
+    suspend fun getTripById(id: kotlin.Int?): Trip?
 
     @Insert
     suspend fun insert(trip: Trip)
