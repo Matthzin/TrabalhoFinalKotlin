@@ -13,20 +13,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.trabalhofinal.components.AppTopBar
-import com.example.trabalhofinal.components.BottomNavigationBar
 import com.example.trabalhofinal.database.AppDatabase
 import com.example.trabalhofinal.entity.Trip
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import androidx.compose.material3.SwipeToDismissBoxValue
+import com.example.trabalhofinal.components.BottomNavigationBar
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     navController: NavController,
-    onBackToMain: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToRegisterTrip: () -> Unit
 ) {
     val context = LocalContext.current
     val tripDao = AppDatabase.getDatabase(context).tripDao()
@@ -41,36 +42,42 @@ fun MainScreen(
     }
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
+        topBar = {
+            TopAppBar(
+                title = { Text("Minhas Viagens") },
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(navController)
+        }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
+        LazyColumn(
+            contentPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                start = 16.dp,
+                end = 16.dp
+            ),
+            modifier = Modifier.fillMaxSize()
         ) {
-            AppTopBar(title = "Minhas Viagens", onNavigationClick = onBackToMain)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyColumn {
-                items(trips, key = { it.id!! }) { trip ->
-                    TripCard(
-                        trip = trip,
-                        onLongPress = {
-                            navController.navigate("editTrip/${trip.id}")
-                        },
-                        onDelete = {
-                            trips.remove(trip)
-                            scope.launch {
-                                tripDao.delete(trip)
-                            }
+            items(trips, key = { it.id!! }) { trip ->
+                TripCard(
+                    trip = trip,
+                    onLongPress = {
+                        navController.navigate("editTrip/${trip.id}")
+                    },
+                    onDelete = {
+                        trips.remove(trip)
+                        scope.launch {
+                            tripDao.delete(trip)
                         }
-                    )
-                }
+                    }
+                )
             }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,20 +92,19 @@ fun TripCard(
             if (it == SwipeToDismissBoxValue.StartToEnd) {
                 onDelete()
                 true
-            } else false
+            } else {
+                false
+            }
         }
     )
 
-    val offsetPx = swipeState.requireOffset()
-    val offsetDp = with(LocalDensity.current) { offsetPx.toDp() }
-
     SwipeToDismissBox(
         state = swipeState,
+        enableDismissFromEndToStart = false,
         backgroundContent = {
             Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .width(offsetDp.coerceAtLeast(0.dp))
+                    .fillMaxSize() // Use fillMaxSize() para o backgroundContent
                     .background(MaterialTheme.colorScheme.errorContainer)
                     .padding(start = 16.dp),
                 contentAlignment = Alignment.CenterStart

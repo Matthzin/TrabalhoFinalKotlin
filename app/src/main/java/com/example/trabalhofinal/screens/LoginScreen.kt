@@ -38,12 +38,12 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center
         ) {
             MyTextField(
-                label = "User",
+                label = "Usuário",
                 value = loginState.user,
                 onValueChange = { loginViewModel.onUserChange(it) }
             )
             MyPasswordField(
-                label = "Password",
+                label = "Senha",
                 value = loginState.password,
                 onValueChange = { loginViewModel.onPasswordChange(it) }
             )
@@ -63,7 +63,7 @@ fun LoginScreen(
                     onNavigateToRegister()
                 }
             ) {
-                Text(text = "Register")
+                Text(text = "Registrar")
             }
         }
     }
@@ -77,7 +77,7 @@ fun LoginScreen(
 
     LaunchedEffect(loginState.isLoggedIn) {
         if (loginState.isLoggedIn) {
-            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
             loginViewModel.clearLoginFlag()
             onLoginSuccess()
         }

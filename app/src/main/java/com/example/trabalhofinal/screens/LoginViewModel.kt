@@ -30,7 +30,7 @@ class LoginViewModel(private val userDao: UserDao) : ViewModel() {
         val password = _uiState.value.password
 
         if (user.isBlank() || password.isBlank()) {
-            _uiState.value = _uiState.value.copy(errorMessage = "Fill all the required fields")
+            _uiState.value = _uiState.value.copy(errorMessage = "Preencha todos os campos")
             return
         }
 
@@ -42,7 +42,7 @@ class LoginViewModel(private val userDao: UserDao) : ViewModel() {
                     isLoggedIn = true
                 )
             } else {
-                _uiState.value = _uiState.value.copy(errorMessage = "Invalid username or password")
+                _uiState.value = _uiState.value.copy(errorMessage = "Usuário ou senha incorretos")
             }
         }
     }

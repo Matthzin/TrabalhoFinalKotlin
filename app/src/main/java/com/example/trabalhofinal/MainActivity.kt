@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
-                    contentWindowInsets = WindowInsets.systemBars
+                    contentWindowInsets = WindowInsets(0)
                 ) { innerPadding ->
                     NavHost(
                         navController = navController,
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        /*composable("mainScreen") {
+                        composable("mainScreen") {
                             MainScreen(
                                 onLogout = {
                                     navController.navigate("loginScreen") {
@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 navController = navController
                             )
-                        }*/
+                        }
 
                         composable("registerUserScreen") {
                             RegisterUserMainScreen(
@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
                         composable("registerTrip") {
                             RegisterTripScreen(
                                 onRegisterTripSuccess = {
-                                    navController.navigate("travelListScreen") {
+                                    navController.navigate("mainScreen") {
                                         popUpTo("registerTrip") { inclusive = true }
                                     }
                                 },
@@ -92,18 +92,19 @@ class MainActivity : ComponentActivity() {
                                         db.tripDao().insert(trip)
                                     }
                                 },
+                                navController = navController,
                                 onBack = {
-                                    navController.popBackStack()
+                                    navController.navigate("mainScreen")
                                 }
                             )
                         }
 
-                        composable("mainScreen") {
-                            MainScreen(
-                                navController = navController, // novo argumento
-                                onBackToMain = {
+                        composable("aboutScreen") {
+                            AboutScreen(
+                                navController = navController,
+                                onBack = {
                                     navController.navigate("mainScreen") {
-                                        popUpTo("travelListScreen") { inclusive = true }
+                                        popUpTo("aboutScreen") { inclusive = true }
                                     }
                                 }
                             )

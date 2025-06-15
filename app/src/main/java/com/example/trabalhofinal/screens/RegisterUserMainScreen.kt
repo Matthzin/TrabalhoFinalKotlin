@@ -60,12 +60,12 @@ fun RegisterUserFields(
     val ctx = LocalContext.current
 
     MyTextField(
-        label = "User",
+        label = "Usuário",
         value = registerUser.value.user,
         onValueChange = { registerUserViewModel.onUserChange(it) }
     )
     MyTextField(
-        label = "Name",
+        label = "Nome",
         value = registerUser.value.name,
         onValueChange = { registerUserViewModel.onNameChange(it) }
     )
@@ -75,13 +75,13 @@ fun RegisterUserFields(
         onValueChange = { registerUserViewModel.onEmailChange(it) }
     )
     MyPasswordField(
-        label = "Password",
+        label = "Senha",
         value = registerUser.value.password,
         errorMessage = registerUser.value.validatePassord(),
         onValueChange = { registerUserViewModel.onPasswordChange(it) }
     )
     MyPasswordField(
-        label = "Confirm password",
+        label = "Confirmar Senha",
         value = registerUser.value.confirmPassword,
         errorMessage = registerUser.value.validateConfirmPassword(),
         onValueChange = { registerUserViewModel.onConfirmPassword(it) }
@@ -93,14 +93,14 @@ fun RegisterUserFields(
             registerUserViewModel.register()
         }
     ) {
-        Text(text = "Register user")
+        Text(text = "Registrar usuário")
     }
 
     Button(
         modifier = Modifier.padding(top = 8.dp),
         onClick = { onNavigateToLogin() }
     ) {
-        Text(text = "Back to Login")
+        Text(text = "Voltar para o Login")
     }
 
     if (registerUser.value.errorMessage.isNotBlank()) {
@@ -112,7 +112,7 @@ fun RegisterUserFields(
 
     LaunchedEffect(registerUser.value.isSaved) {
         if (registerUser.value.isSaved) {
-            Toast.makeText(ctx, "User registered!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(ctx, "Usuário registrado com sucesso!", Toast.LENGTH_SHORT).show()
             registerUserViewModel.cleanDisplayValues()
             onRegisterSuccess()
         }

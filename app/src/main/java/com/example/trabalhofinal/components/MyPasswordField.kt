@@ -62,7 +62,7 @@ fun MyPasswordField(
                         Icons.Default.Visibility
                     else
                         Icons.Default.VisibilityOff,
-                    contentDescription = "Show/Hide password")
+                    contentDescription = "Mostrar/Ocultar senha")
             }
         },
         visualTransformation = if (isPasswordVisibility.value)

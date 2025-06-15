@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 
-class TravelListViewModel(private val tripDao: TripDao) : ViewModel() {
+class MainScreenViewModel(private val tripDao: TripDao) : ViewModel() {
     val trips: StateFlow<List<Trip>> = tripDao.getAllTrips()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }

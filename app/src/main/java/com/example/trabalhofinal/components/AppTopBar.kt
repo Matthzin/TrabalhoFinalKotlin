@@ -10,14 +10,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 @Composable
 fun AppTopBar(
     title: String,
+    showBackButton: Boolean = false,
     navigationIcon: ImageVector = Icons.Default.ArrowBack,
-    onNavigationClick: () -> Unit
+    onNavigationClick: () -> Unit = {}
 ) {
     TopAppBar(
-        title = { Text(title) },
+        colors = TopAppBarDefaults.topAppBarColors(),
+        title = {
+            Text(title)
+        },
         navigationIcon = {
-            IconButton(onClick = onNavigationClick) {
-                Icon(imageVector = navigationIcon, contentDescription = "Navegar para trás")
+            if (showBackButton) {
+                IconButton(onClick = onNavigationClick) {
+                    Icon(
+                        imageVector = navigationIcon,
+                        contentDescription = "Voltar"
+                    )
+                }
             }
         }
     )

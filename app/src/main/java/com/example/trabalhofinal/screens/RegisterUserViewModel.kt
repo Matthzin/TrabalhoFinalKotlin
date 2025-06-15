@@ -21,40 +21,40 @@ data class RegisterUser(
     fun validateEmail(): String {
         val emailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$".toRegex()
         if (email.isBlank()) {
-            return "Email is required"
+            return "Insira um email"
         }
         if (!emailRegex.matches(email)) {
-            return "Invalid email format. Use a valid domain (e.g., user@example.com)"
+            return "Formato de email inválido. Use um formato válido (ex: user@example.com)"
         }
         return ""
     }
 
     fun validatePassord(): String {
         if (password.isBlank()) {
-            return "Password is required"
+            return "Insira uma senha"
         }
         return ""
     }
 
     fun validateConfirmPassword(): String {
         if (confirmPassword != password) {
-            return "The confirm password is different"
+            return "A senhas não conferem"
         }
         return ""
     }
 
     fun validateAllField() {
         if (user.isBlank()) {
-            throw Exception("User is required")
+            throw Exception("Insira um usuário")
         }
         if (validateEmail().isNotBlank()) {
             throw Exception(validateEmail())
         }
         if (name.isBlank()) {
-            throw Exception("Name is required")
+            throw Exception("Insira um nome")
         }
         if (email.isBlank()) {
-            throw Exception("Email is required")
+            throw Exception("Insira um email")
         }
         if (validatePassord().isNotBlank()) {
             throw Exception(validatePassord())
