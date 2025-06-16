@@ -1,6 +1,8 @@
 package com.example.trabalhofinal.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +15,10 @@ import com.example.trabalhofinal.components.ErrorDialog
 import com.example.trabalhofinal.components.MyPasswordField
 import com.example.trabalhofinal.components.MyTextField
 import com.example.trabalhofinal.database.AppDatabase
+import androidx.compose.ui.res.painterResource
+import com.example.trabalhofinal.R
+import com.example.trabalhofinal.viewmodel.LoginViewModel
+import com.example.trabalhofinal.viewmodel.LoginViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +34,9 @@ fun LoginScreen(
 
     val loginState by loginViewModel.uiState.collectAsState()
 
-    Scaffold { paddingValues ->
+    Scaffold(
+
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -37,6 +45,13 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Image(
+                painter = painterResource(id = R.drawable.travel_logo),
+                contentDescription = "Logo",
+                modifier = Modifier
+                    .size(200.dp)
+                    .padding(bottom = 32.dp)
+            )
             MyTextField(
                 label = "Usuário",
                 value = loginState.user,
@@ -49,7 +64,6 @@ fun LoginScreen(
             )
 
             Button(
-                modifier = Modifier.padding(top = 16.dp),
                 onClick = {
                     loginViewModel.login()
                 }
@@ -57,14 +71,16 @@ fun LoginScreen(
                 Text(text = "Login")
             }
 
-            Button(
-                modifier = Modifier.padding(top = 8.dp),
-                onClick = {
-                    onNavigateToRegister()
-                }
-            ) {
-                Text(text = "Registrar")
-            }
+            Text(
+                text = "Não tem uma conta? Registre-se aqui.",
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .clickable {
+                        onNavigateToRegister()
+                    },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 

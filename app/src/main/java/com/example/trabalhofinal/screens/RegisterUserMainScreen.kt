@@ -1,6 +1,7 @@
 package com.example.trabalhofinal.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +14,8 @@ import com.example.trabalhofinal.components.ErrorDialog
 import com.example.trabalhofinal.components.MyPasswordField
 import com.example.trabalhofinal.components.MyTextField
 import com.example.trabalhofinal.database.AppDatabase
+import com.example.trabalhofinal.viewmodel.RegisterUserViewModel
+import com.example.trabalhofinal.viewmodel.RegisterUserViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +41,7 @@ fun RegisterUserMainScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
                 .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             RegisterUserFields(
@@ -96,12 +100,16 @@ fun RegisterUserFields(
         Text(text = "Registrar usuário")
     }
 
-    Button(
-        modifier = Modifier.padding(top = 8.dp),
-        onClick = { onNavigateToLogin() }
-    ) {
-        Text(text = "Voltar para o Login")
-    }
+    Text(
+        text = "Voltar para o Login",
+        modifier = Modifier
+            .padding(top = 8.dp)
+            .clickable {
+                onNavigateToLogin()
+            },
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.primary
+    )
 
     if (registerUser.value.errorMessage.isNotBlank()) {
         ErrorDialog(

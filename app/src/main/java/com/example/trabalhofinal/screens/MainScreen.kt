@@ -1,5 +1,6 @@
 package com.example.trabalhofinal.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -21,6 +22,13 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.compose.material3.SwipeToDismissBoxValue
 import com.example.trabalhofinal.components.BottomNavigationBar
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import java.text.NumberFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import com.example.trabalhofinal.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +66,7 @@ fun MainScreen(
                 start = 16.dp,
                 end = 16.dp
             ),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize()
         ) {
             items(trips, key = { it.id!! }) { trip ->
@@ -67,7 +76,6 @@ fun MainScreen(
                         navController.navigate("editTrip/${trip.id}")
                     },
                     onDelete = {
-                        trips.remove(trip)
                         scope.launch {
                             tripDao.delete(trip)
                         }
@@ -98,13 +106,16 @@ fun TripCard(
         }
     )
 
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
+    val currencyFormatter = remember { NumberFormat.getCurrencyInstance(Locale("pt", "BR")) }
+
     SwipeToDismissBox(
         state = swipeState,
         enableDismissFromEndToStart = false,
         backgroundContent = {
             Box(
                 modifier = Modifier
-                    .fillMaxSize() // Use fillMaxSize() para o backgroundContent
+                    .fillMaxSize()
                     .background(MaterialTheme.colorScheme.errorContainer)
                     .padding(start = 16.dp),
                 contentAlignment = Alignment.CenterStart
@@ -126,12 +137,47 @@ fun TripCard(
                     },
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Destino: ${trip.destination}", style = MaterialTheme.typography.titleMedium)
-                    Text("Tipo: ${trip.tripType.name}", style = MaterialTheme.typography.bodyMedium)
-                    Text("Início: ${trip.startDate}", style = MaterialTheme.typography.bodyMedium)
-                    Text("Término: ${trip.endDate}", style = MaterialTheme.typography.bodyMedium)
-                    Text("Orçamento: R$ ${trip.budget}", style = MaterialTheme.typography.bodyMedium)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val imageResId = when (trip.tripType) {
+                        trip.tripType -> R.drawable.lazer
+                        else -> R.drawable.lazer
+                    }
+
+                    Image(
+                        painter = painterResource(id = imageResId),
+                        contentDescription = "Tipo de Viagem: ${trip.tripType.name}",
+                        modifier = Modifier
+                            .size(72.dp)
+                            .padding(end = 16.dp),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Column {
+                        Text("Destino: ${trip.destination}", style = MaterialTheme.typography.titleMedium)
+                        Text("Tipo: ${trip.tripType.name}", style = MaterialTheme.typography.bodyMedium)
+
+                        val formattedStartDate = try {
+                            LocalDate.parse(trip.startDate.toString()).format(dateFormatter)
+                        } catch (e: Exception) {
+                            trip.startDate
+                        }
+                        Text("Início: $formattedStartDate", style = MaterialTheme.typography.bodyMedium)
+
+                        val formattedEndDate = try {
+                            LocalDate.parse(trip.endDate.toString()).format(dateFormatter)
+                        } catch (e: Exception) {
+                            trip.endDate
+                        }
+                        Text("Término: $formattedEndDate", style = MaterialTheme.typography.bodyMedium)
+
+                        val formattedBudget = currencyFormatter.format(trip.budget)
+                        Text("Orçamento: $formattedBudget", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
         }
