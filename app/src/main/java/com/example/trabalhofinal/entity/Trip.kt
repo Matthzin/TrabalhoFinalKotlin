@@ -7,7 +7,7 @@ import java.util.Date
 
 @Entity
 data class Trip(
-    @PrimaryKey(autoGenerate = true) val id: Int? = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int? = null,
     val destination: String,
     val tripType: TripType,
     val startDate: Date = Date(),

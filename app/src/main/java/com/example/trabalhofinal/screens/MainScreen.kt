@@ -1,5 +1,8 @@
 package com.example.trabalhofinal.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -12,23 +15,28 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavController
 import com.example.trabalhofinal.database.AppDatabase
 import com.example.trabalhofinal.entity.Trip
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.ui.input.pointer.pointerInput
 import com.example.trabalhofinal.components.BottomNavigationBar
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import java.text.NumberFormat
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.time.ZoneId
 import com.example.trabalhofinal.R
+import com.example.trabalhofinal.model.TripType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,9 +51,10 @@ fun MainScreen(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(true) {
-        tripDao.getAllTrips().collectLatest {
+        tripDao.getAllTrips().collectLatest { fetchedTrips ->
+            val sortedTrips = fetchedTrips.sortedBy { it.startDate }
             trips.clear()
-            trips.addAll(it)
+            trips.addAll(sortedTrips)
         }
     }
 
@@ -95,7 +104,7 @@ fun TripCard(
     onDelete: () -> Unit
 ) {
     val swipeState = rememberSwipeToDismissBoxState(
-        positionalThreshold = { it * 0.5f },
+        positionalThreshold = { it * 0.5f }, // Dismiss after 50% swipe
         confirmValueChange = {
             if (it == SwipeToDismissBoxValue.StartToEnd) {
                 onDelete()
@@ -109,6 +118,37 @@ fun TripCard(
     val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
     val currencyFormatter = remember { NumberFormat.getCurrencyInstance(Locale("pt", "BR")) }
 
+    // --- Background Alpha Animation ---
+    val animatedBackgroundAlpha by animateFloatAsState(
+        targetValue = if (swipeState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
+            (swipeState.progress / 0.5f).coerceIn(0f, 1f)
+        } else {
+            0f
+        },
+        // AQUI: Adicionado easing para suavidade
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing) // Aumentei um pouco a duração para 200ms
+    )
+
+    // --- Icon Scale and Alpha Animation ---
+    val iconActivationThreshold = 0.3f
+    val iconFullVisibilityThreshold = 0.45f
+
+    val iconAnimationProgress by remember(swipeState.progress) {
+        val currentProgress = swipeState.progress
+        val calculatedProgress = if (currentProgress > iconActivationThreshold) {
+            ((currentProgress - iconActivationThreshold) / (iconFullVisibilityThreshold - iconActivationThreshold)).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+        mutableStateOf(calculatedProgress)
+    }
+
+    val animatedIconAlphaAndScale by animateFloatAsState(
+        targetValue = iconAnimationProgress,
+        // AQUI: Adicionado easing para suavidade
+        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing) // Aumentei um pouco a duração para 150ms
+    )
+
     SwipeToDismissBox(
         state = swipeState,
         enableDismissFromEndToStart = false,
@@ -116,15 +156,25 @@ fun TripCard(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(vertical = 6.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = animatedBackgroundAlpha))
                     .padding(start = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Excluir",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
-                )
+                val isSwipingActive = swipeState.currentValue != SwipeToDismissBoxValue.Settled ||
+                        swipeState.targetValue != SwipeToDismissBoxValue.Settled
+
+                if (isSwipingActive) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Excluir",
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier
+                            .alpha(animatedIconAlphaAndScale)
+                            .scale(0.8f + (animatedIconAlphaAndScale * 0.2f))
+                    )
+                }
             }
         },
         content = {
@@ -135,7 +185,8 @@ fun TripCard(
                     .pointerInput(Unit) {
                         detectTapGestures(onLongPress = { onLongPress() })
                     },
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -144,34 +195,39 @@ fun TripCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val imageResId = when (trip.tripType) {
-                        trip.tripType -> R.drawable.lazer
-                        else -> R.drawable.lazer
+                        TripType.LAZER -> R.drawable.lazer
+                        TripType.NEGOCIOS -> R.drawable.negocios
+                        TripType.ESTUDOS -> R.drawable.estudos
+                        TripType.OUTROS -> R.drawable.outros
+                        else -> R.drawable.outros // Fallback
                     }
 
                     Image(
                         painter = painterResource(id = imageResId),
-                        contentDescription = "Tipo de Viagem: ${trip.tripType.name}",
+                        contentDescription = "Tipo de Viagem: ${trip.tripType.descricao}",
                         modifier = Modifier
                             .size(72.dp)
                             .padding(end = 16.dp),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
                     )
 
                     Column {
                         Text("Destino: ${trip.destination}", style = MaterialTheme.typography.titleMedium)
-                        Text("Tipo: ${trip.tripType.name}", style = MaterialTheme.typography.bodyMedium)
+                        Text("Tipo: ${trip.tripType.descricao}", style = MaterialTheme.typography.bodyMedium)
 
                         val formattedStartDate = try {
-                            LocalDate.parse(trip.startDate.toString()).format(dateFormatter)
+                            trip.startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().format(dateFormatter)
                         } catch (e: Exception) {
-                            trip.startDate
+                            e.printStackTrace()
+                            "Data inválida"
                         }
                         Text("Início: $formattedStartDate", style = MaterialTheme.typography.bodyMedium)
 
                         val formattedEndDate = try {
-                            LocalDate.parse(trip.endDate.toString()).format(dateFormatter)
+                            trip.endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().format(dateFormatter)
                         } catch (e: Exception) {
-                            trip.endDate
+                            e.printStackTrace()
+                            "Data inválida"
                         }
                         Text("Término: $formattedEndDate", style = MaterialTheme.typography.bodyMedium)
 
