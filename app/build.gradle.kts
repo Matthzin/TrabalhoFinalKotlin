@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.google.devtools.ksp")
     alias(libs.plugins.android.application)
@@ -17,6 +19,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+        buildConfigField("String", "GEMINI_API_KEY", "\"${properties.getProperty("GEMINI_API_KEY")}\"")
     }
 
     buildTypes {
@@ -37,10 +43,18 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
+
+    // Gemini
+    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
+    implementation("androidx.compose.material:material-icons-extended:1.6.7")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+    implementation(libs.generativeai)
 
     // Android Room
     val room_version = "2.6.1"

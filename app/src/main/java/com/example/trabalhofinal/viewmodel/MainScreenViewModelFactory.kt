@@ -3,6 +3,7 @@ package com.example.trabalhofinal.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.trabalhofinal.dao.TripDao
+import com.example.trabalhofinal.screens.MainScreenViewModel
 
 class MainScreenViewModelFactory(
     private val tripDao: TripDao
