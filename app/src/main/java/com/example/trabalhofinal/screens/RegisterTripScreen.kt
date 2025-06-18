@@ -2,42 +2,50 @@ package com.example.trabalhofinal.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.trabalhofinal.components.AppTopBar
 import com.example.trabalhofinal.components.BottomNavigationBar
-import com.example.trabalhofinal.entity.Trip
-import com.example.trabalhofinal.model.TripType
+import com.example.trabalhofinal.components.CurrencyInputField
 import com.example.travelapp.components.DatePickerField
-import kotlinx.coroutines.launch
-import java.text.NumberFormat
-import java.util.*
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.trabalhofinal.database.AppDatabase
+import com.example.trabalhofinal.model.TripType
+import com.example.trabalhofinal.viewmodel.RegisterTripViewModel
+import com.example.trabalhofinal.viewmodel.RegisterTripViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterTripScreen(
     onRegisterTripSuccess: () -> Unit,
-    saveTrip: suspend (trip: Trip) -> Unit,
     navController: NavController,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val tripDao = AppDatabase.getDatabase(context).tripDao()
+    val viewModel: RegisterTripViewModel = viewModel(factory = RegisterTripViewModelFactory(tripDao))
+    val uiState by viewModel.uiState.collectAsState()
+    var expandedDropdown by remember { mutableStateOf(false) }
 
-    var destination by remember { mutableStateOf("") }
-    var startDate by remember { mutableStateOf("") }
-    var endDate by remember { mutableStateOf("") }
-    var budget by remember { mutableStateOf("") }
-    var selectedTripType by remember { mutableStateOf(TripType.LAZER) }
-    var expanded by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            viewModel.resetSaveStatus()
+        }
+    }
+
+    LaunchedEffect(uiState.saveSuccess) {
+        if (uiState.saveSuccess) {
+            Toast.makeText(context, "Viagem cadastrada com sucesso!", Toast.LENGTH_SHORT).show()
+            viewModel.resetSaveStatus()
+            onRegisterTripSuccess()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -61,122 +69,82 @@ fun RegisterTripScreen(
         ) {
 
             OutlinedTextField(
-                value = destination,
-                onValueChange = { destination = it },
+                value = uiState.destination,
+                onValueChange = { viewModel.updateDestination(it) },
                 label = { Text("Destino") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             DatePickerField(
                 label = "Data de Início",
-                date = startDate,
-                onDateSelected = { startDate = it }
+                date = uiState.startDate,
+                onDateSelected = { viewModel.updateStartDate(it) }
             )
 
             DatePickerField(
                 label = "Data de Término",
-                date = endDate,
-                onDateSelected = { endDate = it }
+                date = uiState.endDate,
+                onDateSelected = { viewModel.updateEndDate(it) }
             )
 
             ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
+                expanded = expandedDropdown,
+                onExpandedChange = {
+                    expandedDropdown = !expandedDropdown
+                },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = selectedTripType.name,
+                    value = uiState.selectedTripType.descricao,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Tipo de Viagem") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedDropdown) },
                     modifier = Modifier
                         .menuAnchor()
                         .fillMaxWidth()
                 )
 
                 ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    expanded = expandedDropdown,
+                    onDismissRequest = {
+                        expandedDropdown = false
+                    }
                 ) {
-                    TripType.values().forEach { type ->
+                    TripType.entries.forEach { type ->
                         DropdownMenuItem(
-                            text = { Text(type.name) },
+                            text = { Text(type.descricao) },
                             onClick = {
-                                selectedTripType = type
-                                expanded = false
+                                viewModel.updateSelectedTripType(type)
+                                expandedDropdown = false
                             }
                         )
                     }
                 }
             }
 
-            OutlinedTextField(
-                value = budget,
-                onValueChange = {
-                    val cleanString = it.replace(Regex("[^\\d]"), "")
-                    val parsed = cleanString.toDoubleOrNull() ?: 0.0
-                    val formatted = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
-                        .format(parsed / 100)
-                    budget = formatted
-                },
+            CurrencyInputField(
+                modifier = Modifier.fillMaxWidth(),
                 label = { Text("Orçamento") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
+                initialValue = uiState.budget,
+                onValueChange = { newBudget -> viewModel.updateBudget(newBudget) }
             )
 
             Button(
                 onClick = {
-                    if (destination.isBlank() || startDate.isBlank() || endDate.isBlank() || budget.isBlank()) {
-                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
-                    } else {
-                        isLoading = true
-                        scope.launch {
-                            try {
-                                val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                                val startDateParsed = java.time.LocalDate.parse(startDate, formatter)
-                                val endDateParsed = java.time.LocalDate.parse(endDate, formatter)
-
-                                val startDateDate = java.util.Date.from(
-                                    startDateParsed.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
-                                )
-                                val endDateDate = java.util.Date.from(
-                                    endDateParsed.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
-                                )
-
-                                val budgetValue = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
-                                    .parse(budget)?.toDouble() ?: 0.0
-
-                                val trip = Trip(
-                                    destination = destination,
-                                    tripType = selectedTripType,
-                                    startDate = startDateDate,
-                                    endDate = endDateDate,
-                                    budget = budgetValue
-                                )
-
-                                saveTrip(trip)
-
-                                Toast.makeText(context, "Viagem cadastrada com sucesso!", Toast.LENGTH_SHORT).show()
-
-                                destination = ""
-                                startDate = ""
-                                endDate = ""
-                                budget = ""
-                                selectedTripType = TripType.LAZER
-
-                                onRegisterTripSuccess()
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Erro ao salvar viagem: ${e.message}", Toast.LENGTH_LONG).show()
-                            } finally {
-                                isLoading = false
-                            }
-                        }
-                    }
+                    viewModel.saveTrip()
                 },
-                enabled = !isLoading,
+                enabled = !uiState.isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (isLoading) "Salvando..." else "Cadastrar Viagem")
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Cadastrar Viagem")
+                }
             }
         }
     }

@@ -1,14 +1,8 @@
 package com.example.trabalhofinal.screens
 
-import android.net.Uri
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,10 +14,8 @@ import com.example.trabalhofinal.components.BottomNavigationBar
 import com.example.trabalhofinal.components.TravelItineraryContent
 import com.example.trabalhofinal.components.UniversalBottomSheetContent
 import com.example.trabalhofinal.database.AppDatabase
+import com.example.trabalhofinal.viewmodel.MainScreenViewModel
 import com.example.trabalhofinal.viewmodel.MainScreenViewModelFactory
-import java.io.OutputStreamWriter
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import com.example.trabalhofinal.components.TripCard
 import kotlinx.coroutines.launch
 
@@ -37,36 +29,15 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
     val tripDao = AppDatabase.getDatabase(context).tripDao()
-
     val viewModel: MainScreenViewModel = viewModel(factory = MainScreenViewModelFactory(tripDao))
-
     val trips by viewModel.trips.collectAsState()
     val itineraryUiState by viewModel.itineraryUiState.collectAsState()
-
     val sheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
     val showBottomSheet = itineraryUiState.trip != null
 
     val uiScope = rememberCoroutineScope()
-
-    val createDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/plain")
-    ) { uri: Uri? ->
-        uri?.let {
-            try {
-                context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    OutputStreamWriter(outputStream).use { writer ->
-                        writer.write(itineraryUiState.itineraryText)
-                    }
-                    Toast.makeText(context, "Roteiro exportado com sucesso!", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(context, "Erro ao exportar roteiro: ${e.message}", Toast.LENGTH_LONG).show()
-                e.printStackTrace()
-            }
-        }
-    }
 
 
     Scaffold(
@@ -79,6 +50,10 @@ fun MainScreen(
             BottomNavigationBar(navController)
         }
     ) { innerPadding ->
+        val sortedTrips = remember(trips) {
+            trips.sortedBy { it.startDate }
+        }
+
         LazyColumn(
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
@@ -89,7 +64,7 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            items(trips, key = { it.id!! }) { trip ->
+            items(sortedTrips, key = { it.id!! }) { trip ->
                 TripCard(
                     trip = trip,
                     onLongPress = {
@@ -130,24 +105,11 @@ fun MainScreen(
                     TravelItineraryContent(
                         uiState = itineraryUiState,
                         onRetry = { viewModel.retryGenerateItinerary() },
-                        onExportRequest = { fileName -> createDocumentLauncher.launch(fileName) }
+                        onUserMessageChange = { viewModel.updateMessage(it) },
+                        onSendMessage = { viewModel.sendMessage() }
                     )
                 },
-                actionButton = {
-                    if (!itineraryUiState.isLoading && !itineraryUiState.errorOccurred && itineraryUiState.itineraryText.isNotBlank()) {
-                        val destination = itineraryUiState.trip?.destination ?: "Viagem"
-                        val encodedDestination = URLEncoder.encode(destination, StandardCharsets.UTF_8.toString())
-                        val fileName = "roteiro_${encodedDestination}_${System.currentTimeMillis()}.txt"
-                        Button(
-                            onClick = { createDocumentLauncher.launch(fileName) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.FileDownload, contentDescription = "Exportar")
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Exportar Roteiro (.txt)")
-                        }
-                    }
-                }
+                actionButton = null
             )
         }
     }

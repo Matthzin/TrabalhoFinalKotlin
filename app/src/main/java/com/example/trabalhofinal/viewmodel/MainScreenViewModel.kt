@@ -1,13 +1,13 @@
-package com.example.trabalhofinal.screens
+package com.example.trabalhofinal.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.ViewModelProvider
 import com.example.trabalhofinal.BuildConfig
 import com.example.trabalhofinal.dao.TripDao
 import com.example.trabalhofinal.entity.Trip
 import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.Content
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,19 +24,10 @@ data class ItineraryBottomSheetUiState(
     val isLoading: Boolean = false,
     val errorOccurred: Boolean = false,
     val itineraryText: String = "",
-    val trip: Trip? = null
+    val trip: Trip? = null,
+    val chatHistory: MutableList<Content> = mutableListOf(),
+    val userMessage: String = ""
 )
-
-class MainScreenViewModelFactory(private val tripDao: TripDao) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(MainScreenViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return MainScreenViewModel(tripDao) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
-
 
 class MainScreenViewModel(private val tripDao: TripDao) : ViewModel() {
 
@@ -70,7 +61,9 @@ class MainScreenViewModel(private val tripDao: TripDao) : ViewModel() {
                 isLoading = true,
                 errorOccurred = false,
                 itineraryText = "Gerando roteiro para ${trip.destination}...",
-                trip = trip
+                trip = trip,
+                chatHistory = mutableListOf(),
+                userMessage = ""
             )
         }
 
@@ -95,12 +88,15 @@ class MainScreenViewModel(private val tripDao: TripDao) : ViewModel() {
                     Não inclua nenhuma saudação, introdução ou despedida. Apenas o roteiro formatado.
                 """.trimIndent()
 
-                val response = generativeModel.generateContent(prompt)
+                val chat = generativeModel.startChat(history = _itineraryUiState.value.chatHistory)
+                val response = chat.sendMessage(prompt)
                 val generatedText = response.text ?: "Não foi possível gerar o roteiro."
+
                 _itineraryUiState.update {
                     it.copy(
                         isLoading = false,
-                        itineraryText = generatedText
+                        itineraryText = generatedText,
+                        chatHistory = chat.history.toMutableList()
                     )
                 }
             } catch (e: Exception) {
@@ -116,13 +112,64 @@ class MainScreenViewModel(private val tripDao: TripDao) : ViewModel() {
         }
     }
 
+    fun updateMessage(message: String) {
+        _itineraryUiState.update { it.copy(userMessage = message) }
+    }
+
+    fun sendMessage() {
+        val currentTrip = _itineraryUiState.value.trip
+        val userMessage = _itineraryUiState.value.userMessage
+
+        if (currentTrip == null || userMessage.isBlank()) {
+            return
+        }
+
+        _itineraryUiState.update {
+            it.copy(
+                isLoading = true,
+                errorOccurred = false,
+                itineraryText = "Refinando roteiro com sua sugestão...",
+                userMessage = ""
+            )
+        }
+
+        viewModelScope.launch {
+            try {
+                val chat = generativeModel.startChat(history = _itineraryUiState.value.chatHistory)
+                val response = chat.sendMessage(userMessage)
+                val generatedText = response.text ?: "Não foi possível refinar o roteiro."
+
+                _itineraryUiState.update {
+                    it.copy(
+                        isLoading = false,
+                        itineraryText = generatedText,
+                        chatHistory = chat.history.toMutableList()
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("MainScreenViewModel", "Erro ao refinar roteiro Gemini", e)
+                _itineraryUiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorOccurred = true,
+                        itineraryText = "Erro ao refinar roteiro: ${e.message}. Tente novamente."
+                    )
+                }
+            }
+        }
+    }
+
     fun resetItineraryUiState() {
         _itineraryUiState.update { ItineraryBottomSheetUiState() }
     }
 
     fun retryGenerateItinerary() {
         _itineraryUiState.value.trip?.let { trip ->
-            generateItineraryForTrip(trip)
+            if (_itineraryUiState.value.chatHistory.isEmpty()) {
+                generateItineraryForTrip(trip)
+            } else {
+                generateItineraryForTrip(trip)
+            }
         }
     }
 }

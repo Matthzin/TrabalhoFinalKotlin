@@ -21,14 +21,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.example.trabalhofinal.R // Certifique-se de que este import está correto
-import com.example.trabalhofinal.entity.Trip // Certifique-se de que este import está correto
-import com.example.trabalhofinal.model.TripType // Certifique-se de que este import está correto
+import com.example.trabalhofinal.R
+import com.example.trabalhofinal.entity.Trip
+import com.example.trabalhofinal.model.TripType
 import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
-import androidx.compose.material.icons.filled.AutoAwesome // Importe o ícone do Gemini
+import androidx.compose.material.icons.filled.AutoAwesome
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +36,7 @@ fun TripCard(
     trip: Trip,
     onLongPress: () -> Unit,
     onDelete: () -> Unit,
-    onGenerateItinerary: (Trip) -> Unit // Mantenha este callback
+    onGenerateItinerary: (Trip) -> Unit
 ) {
     val swipeState = rememberSwipeToDismissBoxState(
         positionalThreshold = { it * 0.5f },
@@ -119,7 +119,7 @@ fun TripCard(
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Box( // Adicione um Box aqui para permitir posicionamento de filhos
+                Box(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -133,7 +133,6 @@ fun TripCard(
                             TripType.NEGOCIOS -> R.drawable.negocios
                             TripType.ESTUDOS -> R.drawable.estudos
                             TripType.OUTROS -> R.drawable.outros
-                            // Removido o 'else' redundante, já que OUTROS é o último na enum e pode servir como fallback
                         }
 
                         Image(
@@ -169,19 +168,17 @@ fun TripCard(
                             Text("Orçamento: $formattedBudget", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-
-                    // Ícone do Gemini no canto inferior direito do Card
                     IconButton(
-                        onClick = { onGenerateItinerary(trip) }, // Chamar o callback com a viagem
+                        onClick = { onGenerateItinerary(trip) },
                         modifier = Modifier
-                            .align(Alignment.BottomEnd) // Alinha ao canto inferior direito do Box
-                            .padding(8.dp) // Adiciona um padding para não ficar colado na borda
-                            .size(36.dp) // Tamanho do ícone
+                            .align(Alignment.BottomEnd)
+                            .padding(8.dp)
+                            .size(36.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AutoAwesome, // Ícone de "estrelas" ou "magia" para IA/Gemini
+                            imageVector = Icons.Default.AutoAwesome,
                             contentDescription = "Gerar Roteiro com Gemini",
-                            tint = MaterialTheme.colorScheme.tertiary // Uma cor que contraste bem
+                            tint = MaterialTheme.colorScheme.tertiary
                         )
                     }
                 }
